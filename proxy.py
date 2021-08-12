@@ -29,7 +29,7 @@ class ProxyScan(object):
     def create_url(self, parameters):
         request_str = ''
         for key, value in parameters.items():
-            request_str += f'{key}={value}&'
+            request_str += '{}={}&'.format(key, value)
         url = self.API_URL + request_str
 
         return url
@@ -80,7 +80,44 @@ class ProxyScan(object):
                 return [{'Error request to API': 'Response is not JSON'}]
 
 
+class ProxyList(ProxyScan):
+
+    def get_proxy(self, **parameters):
+        """
+        docstring
+        """
+        response = []
+        proxys = super().get_proxy(**parameters)
+        # print(json.dumps(proxys, indent=4, sort_keys=True))
+        try:
+            for proxy in proxys:
+                ip = proxy.get('Ip')
+                # print(ip)
+                port = proxy.get('Port')
+                schema = proxy.get('Type')
+                if len(schema) > 1:
+                    pair_proxy = {}
+                    for s in schema:
+                        s = s.lower()
+                        pair_proxy.update(
+                            {s: '{}://{}:{}'.format(s, ip, port)}
+                        )
+                    response.append(pair_proxy)
+                    pair_proxy = {}
+                else:
+                    s = schema[0].lower()
+                    response.append({s: '{}://{}:{}'.format(s, ip, port)})
+        except Exception as error:
+            print(error)
+            sys.exit(0)
+
+        return response
+
+
 if __name__ == "__main__":
-    test = ProxyScan()
-    r = test.get_proxy()
-    print(json.dumps(r, indent=4, sort_keys=True))
+
+    test2 = ProxyList()
+
+    r2 = test2.get_proxy(type='http,https', limit=3)
+
+    print(json.dumps(r2, indent=4, sort_keys=True))
